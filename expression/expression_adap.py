@@ -1,5 +1,5 @@
 import random
-import matplotlib.pyplot as plt
+
 
 OPERATIONS = ['+', '-', '*', '/']
 
@@ -70,6 +70,15 @@ def select_parents(population):
 
     return parent1, parent2
 
+# calculo de diversidade da população
+def diversity(population):
+    diversity = 0
+    for i in range(len(population)):
+        for j in range(i + 1, len(population)):
+            if population[i] == population[j]:
+                diversity += 1
+    return diversity
+
 def crossover(parent1, parent2, crossover_rate):
     if isinstance(parent1, int) or isinstance(parent2, int):
         return random.randint(1, 10)
@@ -93,15 +102,24 @@ def mutate(expression, mutation_rate):
         right_expression = mutate(expression.right_value, mutation_rate)
         return Expression(operator, left_expression, right_expression)
     
-def genetic_algorithm():
+def genetic_algorithm_adap(crossover_rate, mutation_rate):
     population = generate_population(POPULATION_SIZE)
     max_fitness = []
     for i in range(MAX_GENERATIONS):
         parent1, parent2 = select_parents(population)
 
-        child = crossover(parent1, parent2, crossover_rate=0.8)
+        population_diversity = diversity(population)
 
-        child = mutate(child, mutation_rate=0.1)
+        if population_diversity >= POPULATION_SIZE * 0.7:
+            crossover_rate = crossover_rate + (crossover_rate * 0.1)
+            mutation_rate = mutation_rate - (mutation_rate * 0.1)
+        else:
+            crossover_rate = crossover_rate - (crossover_rate * 0.1)
+            mutation_rate = mutation_rate + (mutation_rate * 0.1)
+
+        child = crossover(parent1, parent2, crossover_rate)
+
+        child = mutate(child, mutation_rate)
 
         child_fitness = fitness(child)
         max_fitness.append(child_fitness)
@@ -115,11 +133,9 @@ def genetic_algorithm():
     population = sorted(population, key=fitness, reverse=True)
     return population[0], max_fitness
 
-best_expression, max_fitness = genetic_algorithm()
+# best_expression, max_fitness = genetic_algorithm_adap(0.8, 0.1)
 
-print("Melhor expressão encontrada: ", best_expression)
-print("Valor da expressão: ", evaluate(best_expression))
+# print("Melhor expressão encontrada: ", best_expression)
+# print("Valor da expressão: ", evaluate(best_expression))
 
-plt.plot(range(len(max_fitness)), max_fitness)
-plt.show()
 

@@ -12,8 +12,6 @@ MAX_GENERATIONS = 10000
 
 TARGET_VALUE = 124
 
-CROSSOVER_RATE = 0.8
-
 class Expression():
     def __init__(self, operator, right_value, left_value):
         self.operator = operator
@@ -72,23 +70,14 @@ def select_parents(population):
 
     return parent1, parent2
 
-# calculo de diversidade da população
-def diversity(population):
-    diversity = 0
-    for i in range(len(population)):
-        for j in range(i + 1, len(population)):
-            if population[i] == population[j]:
-                diversity += 1
-    return diversity
-
-def crossover(parent1, parent2, CROSSOVER_RATE):
+def crossover(parent1, parent2, crossover_rate):
     if isinstance(parent1, int) or isinstance(parent2, int):
         return random.randint(1, 10)
     else:
-        if random.uniform(0, 1) < CROSSOVER_RATE:
+        if random.uniform(0, 1) < crossover_rate:
             operator = random.choice([parent1.operator, parent2.operator])
-            left_expression = crossover(parent1.left_value, parent2.left_value, CROSSOVER_RATE)
-            right_expression = crossover(parent1.right_value, parent2.right_value, CROSSOVER_RATE)
+            left_expression = crossover(parent1.left_value, parent2.left_value, crossover_rate)
+            right_expression = crossover(parent1.right_value, parent2.right_value, crossover_rate)
             return Expression(operator, left_expression, right_expression)
         else:
             return random.choice([parent1, parent2])
@@ -104,15 +93,15 @@ def mutate(expression, mutation_rate):
         right_expression = mutate(expression.right_value, mutation_rate)
         return Expression(operator, left_expression, right_expression)
     
-def genetic_algorithm():
+def genetic_algorithm(crossover_rate, mutation_rate):
     population = generate_population(POPULATION_SIZE)
     max_fitness = []
     for i in range(MAX_GENERATIONS):
         parent1, parent2 = select_parents(population)
 
-        child = crossover(parent1, parent2, CROSSOVER_RATE=0.8)
+        child = crossover(parent1, parent2, crossover_rate)
 
-        child = mutate(child, mutation_rate=0.1)
+        child = mutate(child, mutation_rate)
 
         child_fitness = fitness(child)
         max_fitness.append(child_fitness)
@@ -126,11 +115,11 @@ def genetic_algorithm():
     population = sorted(population, key=fitness, reverse=True)
     return population[0], max_fitness
 
-best_expression, max_fitness = genetic_algorithm()
+# best_expression, max_fitness = genetic_algorithm()
 
-print("Melhor expressão encontrada: ", best_expression)
-print("Valor da expressão: ", evaluate(best_expression))
+# print("Melhor expressão encontrada: ", best_expression)
+# print("Valor da expressão: ", evaluate(best_expression))
 
-plt.plot(range(len(max_fitness)), max_fitness)
-plt.show()
+# plt.plot(range(len(max_fitness)), max_fitness)
+# plt.show()
 
