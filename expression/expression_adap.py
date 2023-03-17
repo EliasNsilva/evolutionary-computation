@@ -110,7 +110,7 @@ def genetic_algorithm_adap(crossover_rate, mutation_rate):
 
         population_diversity = diversity(population)
 
-        if population_diversity >= POPULATION_SIZE * 0.7:
+        if population_diversity < POPULATION_SIZE * 0.3:
             crossover_rate = crossover_rate + (crossover_rate * 0.1)
             mutation_rate = mutation_rate - (mutation_rate * 0.1)
         else:
@@ -131,11 +131,7 @@ def genetic_algorithm_adap(crossover_rate, mutation_rate):
         population[0] = child
 
     population = sorted(population, key=fitness, reverse=True)
-    return population[0], max_fitness
-
-# best_expression, max_fitness = genetic_algorithm_adap(0.8, 0.1)
-
-# print("Melhor expressão encontrada: ", best_expression)
-# print("Valor da expressão: ", evaluate(best_expression))
+    best_value = evaluate(population[0])
+    return population[0], best_value, max_fitness
 
 

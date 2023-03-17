@@ -113,13 +113,5 @@ def genetic_algorithm(crossover_rate, mutation_rate):
         population[0] = child
 
     population = sorted(population, key=fitness, reverse=True)
-    return population[0], max_fitness
-
-# best_expression, max_fitness = genetic_algorithm()
-
-# print("Melhor expressão encontrada: ", best_expression)
-# print("Valor da expressão: ", evaluate(best_expression))
-
-# plt.plot(range(len(max_fitness)), max_fitness)
-# plt.show()
-
+    best_value = evaluate(population[0])
+    return population[0], best_value, max_fitness
