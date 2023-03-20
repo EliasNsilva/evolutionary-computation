@@ -1,5 +1,4 @@
 import random
-import matplotlib.pyplot as plt
 
 OPERATIONS = ['+', '-', '*', '/']
 
@@ -106,11 +105,11 @@ def genetic_algorithm(crossover_rate, mutation_rate):
         child_fitness = fitness(child)
         max_fitness.append(child_fitness)
 
-        if child_fitness == 1:
-            return child, max_fitness
-
         population = sorted(population, key=fitness)
         population[0] = child
+
+        if child_fitness == 1:
+            break
 
     population = sorted(population, key=fitness, reverse=True)
     best_value = evaluate(population[0])
