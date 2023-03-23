@@ -7,8 +7,6 @@ MAX_DEPTH = 3
 
 POPULATION_SIZE = 100
 
-MAX_GENERATIONS = 10000
-
 TARGET_VALUE = 124
 
 class Expression():
@@ -19,7 +17,7 @@ class Expression():
     def __str__(self):
         return f' ({self.left_value} {self.operator} {self.right_value}) '
 
-# calcula o valor de uma árvore sintática
+# calcula o valor da árvore 
 def evaluate(expression):
     if isinstance(expression, int):
         return expression
@@ -92,10 +90,10 @@ def mutate(expression, mutation_rate):
         right_expression = mutate(expression.right_value, mutation_rate)
         return Expression(operator, left_expression, right_expression)
     
-def genetic_algorithm(crossover_rate, mutation_rate):
+def genetic_algorithm(max_generations,crossover_rate, mutation_rate):
     population = generate_population(POPULATION_SIZE)
     max_fitness = []
-    for i in range(MAX_GENERATIONS):
+    for i in range(max_generations):
         parent1, parent2 = select_parents(population)
 
         child = crossover(parent1, parent2, crossover_rate)
@@ -108,8 +106,8 @@ def genetic_algorithm(crossover_rate, mutation_rate):
         population = sorted(population, key=fitness)
         population[0] = child
 
-        if child_fitness == 1:
-            break
+        # if child_fitness == 1:
+        #     break
 
     population = sorted(population, key=fitness, reverse=True)
     best_value = evaluate(population[0])
