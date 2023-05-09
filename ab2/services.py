@@ -35,13 +35,12 @@ def cruzamento(pai, mae):
 def mutacao(cromo):
     pos=np.random.randint(0, genes_per_individual, 1)
     op=np.random.choice([0,1]) # 0=soma, 1=subtracao
+    cromos1 = cromo.copy()
     if not op:
-        cromo[pos] = cromo[pos]*(1+taxa_variacao_mutacao)
-        print(cromo)
+        cromos1[pos] = (cromo[pos].copy()*(1+taxa_variacao_mutacao))
     else:
-        cromo[pos] = cromo[pos]*(1-taxa_variacao_mutacao)
-        print(cromo)
-    return cromo
+        cromos1[pos] = (cromo[pos].copy()*(1-taxa_variacao_mutacao))
+    return cromos1
 
 def calcular_custo(populacao):
     custos = []
@@ -84,14 +83,14 @@ def selecionar_individuos(populacao, custos, n):
     # Normalizar aptidões
     soma_aptidoes = sum(aptidoes)
     aptidoes = [a/soma_aptidoes for a in aptidoes]
-    
+
     # Selecionar os N indivíduos com menor custo
     indices_menores_custos = np.argsort(custos)[:int(n)]
     mantidos = [populacao[i] for i in indices_menores_custos]
-    
+
     # Selecionar indivíduos substitutos utilizando o método da roleta
     substitutos = []
-    
+
     for i in range(len(populacao) - int(n)):
         aleatorio = random.random()
         soma = 0
@@ -111,7 +110,7 @@ def selecionar_individuos(populacao, custos, n):
                 else:
                     substitutos.append(populacao[j])
                 break
-    
+
     # Retornar indivíduos mantidos e substitutos
     return mantidos + substitutos
 
@@ -119,8 +118,13 @@ def selecionar_individuos(populacao, custos, n):
 menor = encontrar_melhor_individuo(population)
 media_aritimetica =  np.mean(menor)
 nova_geracao = selecionar_individuos(population, custo, percentual_prox_gen*genes_per_individual)
+cross_resultados = cruzamento(nova_geracao[0], nova_geracao[1])
+ind_poss_mutacao = mutacao(cross_resultados[0])
 
 print("Custo do cromossomo aleatório: ", custo)
 print("Custo do menor cromossomo aleatório: ", menor )
 print("Média aritimética: ", media_aritimetica)
 print("Nova geração: ", nova_geracao)
+print("filho1 e filho2: ", cross_resultados)
+print("mutação", ind_poss_mutacao)
+
