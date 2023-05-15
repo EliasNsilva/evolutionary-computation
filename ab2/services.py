@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 MAX_VOICE_GSM   = 125
 MAX_VOICE_WCDMA = 150
@@ -68,19 +69,12 @@ def start_ga(pop_size=4, mutation_rate=MUTATION_RATE, generations=50):
     population = [generate_idv(NUM_SERVICES, 0.0, 150.0) for _ in range(pop_size)]
     # population = [[50,82.50,24.96,36], [64,121.88,5,15], [38,80.63,24.48,37],[44,69,24.96,31]]
     best_idv, best_score = None, np.inf
+    all_scores = []
 
     for _ in range(generations):
         new_generation = []
         fitnesses = evaluate(population)
         mom_idx, dad_idx = select(fitnesses)
-
-        if fitnesses[mom_idx] < best_score:
-            best_idv = population[mom_idx]
-            best_score = fitnesses[mom_idx]
-        # print(best_idv, best_score)
-
-        # if best_score <= 0.0:
-        #     break
 
         child1, child2 = crossover(population[mom_idx], population[dad_idx])
 
@@ -88,8 +82,17 @@ def start_ga(pop_size=4, mutation_rate=MUTATION_RATE, generations=50):
             child1 = mutate(child1)
             child2 = mutate(child2)
 
+        if fitnesses[mom_idx] < best_score:
+            best_idv = population[mom_idx]
+            best_score = fitnesses[mom_idx]
+        all_scores.append(best_score)
+
         new_generation.extend([population[mom_idx], population[dad_idx], child1, child2])
         population = new_generation
+
+    # plt.plot(range(len(all_scores)), all_scores, color='green')
+    # plt.show()
+    print(all_scores)
 
     print(best_idv, best_score)
 
