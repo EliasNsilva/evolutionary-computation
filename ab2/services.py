@@ -1,130 +1,97 @@
-import numpy as np
 import random
+import numpy as np
 
-# Definindo os limites máximos de usuários por tecnologia e tipo de serviço
-max_voice_gsm = 150
-max_data_gsm = 80
-max_voice_wcdma = 275
-max_data_wcdma = 110
+MAX_VOICE_GSM   = 125
+MAX_VOICE_WCDMA = 150
+MAX_DATA_GSM    = 30
+MAX_DATA_WCDMA  = 80
+MAX_SUM_VOICE   = MAX_VOICE_GSM + MAX_VOICE_WCDMA # 275
+MAX_SUM_DATA    = MAX_DATA_GSM + MAX_DATA_WCDMA  # 110
+NUM_SERVICES    = 4 # 2 voice services and 2 data services (for each technology, gsm and wcdma)
+MUTATION_RATE   = 0.1
+# NET_CAPACITY = (MAX_VOICE_GSM, MAX_VOICE_WCDMA, MAX_DATA_GSM, MAX_DATA_WCDMA)
 
-# Gerando uma população aleatória de 4 indivíduos com 4 genes cada
-population_size = 4
-genes_per_individual = 4
-taxa_variacao_mutacao=0.1
-taxa_mutacao_populacao=0.2
-population = np.random.rand(population_size, genes_per_individual)
+def generate_idv(n, start, end):
+    return [random.uniform(start, end) for _ in range(n)]
 
-percentual_prox_gen =0.5
-geracoes = 50
+def evaluate(population):
+    fitnesses = []
 
-# Multiplicando cada valor de gene pelo limite máximo correspondente
-population[:,0] *= max_voice_gsm    # Voz GSM
-population[:,1] *= max_data_gsm    # Dados GSM
-population[:,2] *= max_voice_wcdma # Voz WCDMA
-population[:,3] *= max_data_wcdma  # Dados WCDMA
+    for chromo in population:
+        voice_gsm, voice_wcdma, data_gsm, data_wcdma = chromo
+        sum_voice = voice_gsm + voice_wcdma
+        sum_data = data_gsm + data_wcdma
 
-print("População: ", population)
-
-def cruzamento(pai, mae):
-    ponto_corte = int(genes_per_individual/2)
-    filho1 = np.concatenate((pai[:ponto_corte],mae[ponto_corte:]))
-    filho2 = np.concatenate((mae[:ponto_corte],pai[ponto_corte:]))
-
-    return filho1, filho2
-
-def mutacao(cromo):
-    pos=np.random.randint(0, genes_per_individual, 1)
-    op=np.random.choice([0,1]) # 0=soma, 1=subtracao
-    cromos1 = cromo.copy()
-    if not op:
-        cromos1[pos] = (cromo[pos].copy()*(1+taxa_variacao_mutacao))
-    else:
-        cromos1[pos] = (cromo[pos].copy()*(1-taxa_variacao_mutacao))
-    return cromos1
-
-def calcular_custo(populacao):
-    custos = []
-    for cromossomo in populacao:
-        # Descompacta o cromossomo em quatro genes
-        voz_gsm, dados_gsm, voz_wcdma, dados_wcdma = cromossomo
-        # Calcula a distribuição de usuários de voz e dados em cada tecnologia
-        voz_gsm_total = voz_gsm + 0.5*dados_gsm # cada usuário de dados consome o dobro de um de voz
-        dados_gsm_total = dados_gsm
-        voz_wcdma_total = voz_wcdma + 0.5*dados_wcdma # cada usuário de dados consome o dobro de um de voz
-        dados_wcdma_total = dados_wcdma
-        
-        # Verifica se a capacidade máxima de usuários de voz e dados foi excedida
-        if voz_gsm_total > 150 or dados_gsm_total > 80:
-            custos.append(float("inf")) # Penaliza o cromossomo com um custo muito alto
-        elif voz_wcdma_total > 275 or dados_wcdma_total > 110:
-            custos.append(float("inf")) # Penaliza o cromossomo com um custo muito alto
+        if voice_gsm > MAX_VOICE_GSM or voice_wcdma > MAX_VOICE_WCDMA or data_gsm > MAX_DATA_GSM or data_wcdma > MAX_DATA_WCDMA:
+            fitnesses.append(np.Infinity)
+        elif sum_voice > MAX_SUM_VOICE or sum_data > MAX_SUM_DATA:
+            fitnesses.append(np.Infinity)
         else:
-            # Calcula o custo como a diferença entre a demanda desejada e a distribuição obtida
-            custo = ((0.4 - voz_gsm_total/150)**2 +
-                     (0.2 - dados_gsm_total/80)**2 +
-                     (0.3 - voz_wcdma_total/275)**2 +
-                     (0.1 - dados_wcdma_total/110)**2)
-            custos.append(custo)
-    return custos
+            cost_gsm = np.power(-30 + data_gsm + 0.24 * voice_gsm, 2)
+            cost_wcdma = np.power(-80 + data_wcdma + 0.53 * voice_wcdma, 2)
+            sum_voice = 1 - (sum_voice/MAX_SUM_VOICE)
+            sum_data = 1 - (sum_data/MAX_SUM_DATA)
+
+            fitnesses.append((cost_gsm + cost_wcdma) * sum_data * sum_voice)
+
+    return fitnesses
+
+def select(fitnesses):
+    ordered_idx = np.argsort(fitnesses)
+    # dad_idx = int(NUM_SERVICES/2)
+    # mom_idx = dad_idx-1
+    return ordered_idx[0], ordered_idx[1]
+
+def crossover(mom, dad):
+    cross_pt = int(NUM_SERVICES/2)
+    child1 = np.concatenate((mom[:cross_pt], dad[cross_pt:]))
+    child2 = np.concatenate((dad[:cross_pt], mom[cross_pt:]))
+
+    return child1, child2
+
+def mutate(child):
+    pos = np.random.randint(0, NUM_SERVICES, 1)
+    op = np.random.choice([0,1]) # 0=sum, 1=subtract
+    mutated_child = child.copy()
+    if not op:
+        mutated_child[pos] = (child[pos]*(1+MUTATION_RATE))
+    else:
+        mutated_child[pos] = (child[pos]*(1-MUTATION_RATE))
+
+    return mutated_child
+
+def print_output(idv, score):
+    print(f'~ best individual found ~\n{idv}    -- cost {score}\n')
 
 
-custo = calcular_custo(population)
+def start_ga(pop_size=4, mutation_rate=MUTATION_RATE, generations=50):
+    population = [generate_idv(NUM_SERVICES, 0.0, 150.0) for _ in range(pop_size)]
+    # population = [[50,82.50,24.96,36], [64,121.88,5,15], [38,80.63,24.48,37],[44,69,24.96,31]]
+    best_idv, best_score = None, np.inf
 
-def encontrar_melhor_individuo(populacao):
-    custos = calcular_custo(populacao)
-    melhor_individuo = populacao[np.argmin(custos)]
-    return melhor_individuo
+    for _ in range(generations):
+        new_generation = []
+        fitnesses = evaluate(population)
+        mom_idx, dad_idx = select(fitnesses)
 
+        if fitnesses[mom_idx] < best_score:
+            best_idv = population[mom_idx]
+            best_score = fitnesses[mom_idx]
+        # print(best_idv, best_score)
 
-#Função com o tam da população correta
-def selecionar_individuos(populacao, custos, n):
-    # Calcular valores de aptidão
-    aptidoes = [1/c for c in custos]
-    # Normalizar aptidões
-    soma_aptidoes = sum(aptidoes)
-    aptidoes = [a/soma_aptidoes for a in aptidoes]
+        # if best_score <= 0.0:
+        #     break
 
-    # Selecionar os N indivíduos com menor custo
-    indices_menores_custos = np.argsort(custos)[:int(n)]
-    mantidos = [populacao[i] for i in indices_menores_custos]
+        child1, child2 = crossover(population[mom_idx], population[dad_idx])
 
-    # Selecionar indivíduos substitutos utilizando o método da roleta
-    substitutos = []
+        if np.random.uniform() <= mutation_rate:
+            child1 = mutate(child1)
+            child2 = mutate(child2)
 
-    for i in range(len(populacao) - int(n)):
-        aleatorio = random.random()
-        soma = 0
-        for j, aptidao in enumerate(aptidoes):
-            soma += aptidao
+        new_generation.extend([population[mom_idx], population[dad_idx], child1, child2])
+        population = new_generation
 
-            if soma > aleatorio:
-                # Adicionar o cromossomo com menor custo entre os escolhidos
-                if np.array_equal(population[j], mantidos):
-                    menor_custo = float("inf")
-                    melhor_cromossomo = None
-                    for k in range(len(populacao)):
-                        if populacao[k] not in mantidos and custos[k] < menor_custo:
-                            menor_custo = custos[k]
-                            melhor_cromossomo = populacao[k]
-                    substitutos.append(melhor_cromossomo)
-                else:
-                    substitutos.append(populacao[j])
-                break
+    print(best_idv, best_score)
 
-    # Retornar indivíduos mantidos e substitutos
-    return mantidos + substitutos
-
-
-menor = encontrar_melhor_individuo(population)
-media_aritimetica =  np.mean(menor)
-nova_geracao = selecionar_individuos(population, custo, percentual_prox_gen*genes_per_individual)
-cross_resultados = cruzamento(nova_geracao[0], nova_geracao[1])
-ind_poss_mutacao = mutacao(cross_resultados[0])
-
-print("Custo do cromossomo aleatório: ", custo)
-print("Custo do menor cromossomo aleatório: ", menor )
-print("Média aritimética: ", media_aritimetica)
-print("Nova geração: ", nova_geracao)
-print("filho1 e filho2: ", cross_resultados)
-print("mutação", ind_poss_mutacao)
-
+if __name__ == '__main__':
+    start_ga()
