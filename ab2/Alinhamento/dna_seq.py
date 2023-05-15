@@ -1,14 +1,13 @@
 import random
+import matplotlib.pyplot as plt
 
-# Definir as sequências de DNA
 seq1 = 'ATCGAGCTAGCTAGC--'
 seq2 = 'CTAGCTAGCT--CTCCCAA'
 seq3 = 'GCTAG-TAGCTAGCTAG'
 sequences = [seq1, seq2, seq3]
 
-# Definir o tamanho da população, número de gerações e taxa de mutação
 POPULATION_SIZE = 100
-NUM_GENERATIONS = 500
+NUM_GENERATIONS = 100
 MUTATION_RATE = 0.1
 
 # Função para avaliar a qualidade do alinhamento
@@ -22,9 +21,9 @@ def score_alignment(alignment):
                 if column[j] == '-' or column[k] == '-':
                     continue
                 elif column[j] != column[k]:
-                    score += 1
-                else:
                     score -= 1
+                else:
+                    score += 1
     return score
 
 # Criação da população inicial: 50% de gaps para cada sequência e igualar o tamanho delas
@@ -35,7 +34,6 @@ def create_population():
         alignment = []
         for seq in sequences:
             gaps = '-' * ((max_length - len(seq)) + round(max_length / 2))
-            #gaps = '-' * random.randint(0, int(len(seq) / 2))
             seq = list(seq)
             for gap in gaps:
                 seq.insert(random.randint(0, len(seq)), gap)
@@ -74,29 +72,31 @@ def select(population):
     sorted_population = sorted(population, key=score_alignment, reverse=True)
     return sorted_population[:int(POPULATION_SIZE * 0.2)]
 
-# Criar uma população inicial aleatória
-population = create_population()
+if __name__ == '__main__':
+    # Criar uma população inicial aleatória
+    population = create_population()
+    best_score = []
 
-for generation in range(NUM_GENERATIONS):
-    selected = select(population)
-    # Criar uma nova população através do cruzamento dos indivíduos selecionados
-    offspring = []
-    while len(offspring) < POPULATION_SIZE:
-        parent1 = random.choice(selected)
-        parent2 = random.choice(selected)
-        child = crossover(parent1, parent2)
-        child = mutate(child)
-        offspring.append(child)
-    # Substituir a população anterior pela nova população
-    population = offspring
-    # Imprimir a melhor pontuação da geração atual
-    best_alignment = max(population, key=score_alignment)
-    best_score = score_alignment(best_alignment)
-    print(f'Geração {generation}: melhor pontuação = {best_score}')
+    for generation in range(NUM_GENERATIONS):
+        selected = select(population)
+        # Criar uma nova população através do cruzamento dos indivíduos selecionados
+        offspring = []
+        while len(offspring) < POPULATION_SIZE:
+            parent1 = random.choice(selected)
+            parent2 = random.choice(selected)
+            child = crossover(parent1, parent2)
+            child = mutate(child)
+            offspring.append(child)
+        # Substituir a população anterior pela nova população
+        population = offspring
+
+        best_alignment = max(population, key=score_alignment)
+        best_score.append(score_alignment(best_alignment))
     
-# Imprimir o melhor alinhamento encontrado
-best_alignment = max(population, key=score_alignment)
-print('Melhor alinhamento:')
-for seq in best_alignment:
-    print(seq)
-print(f'Melhor fitness = {score_alignment(best_alignment)}')
+    best_alignment = max(population, key=score_alignment)
+    print('Melhor alinhamento:')
+    for seq in best_alignment:
+        print(seq)
+    print(f'Melhor fitness = {score_alignment(best_alignment)}')
+    plt.plot(range(NUM_GENERATIONS), best_score, color='green')
+    plt.show()
